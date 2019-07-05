@@ -16,9 +16,9 @@ struct Distinct {
 }
 
 impl Top {
-    fn new(matches: &ArgMatches) -> Top {
+    fn new(input_file: &str, matches: &ArgMatches) -> Top {
         Top {
-            input_file: matches.value_of("input_file").unwrap().to_owned(),
+            input_file: input_file.to_owned(),
             nb_top_queries: matches
                 .value_of("nb_top_queries")
                 .unwrap()
@@ -41,9 +41,9 @@ impl Top {
 }
 
 impl Distinct {
-    fn new(matches: &ArgMatches) -> Distinct {
+    fn new(input_file: &str, matches: &ArgMatches) -> Distinct {
         Distinct {
-            input_file: matches.value_of("input_file").unwrap().to_owned(),
+            input_file: input_file.to_owned(),
             from: match matches.value_of("from") {
                 Some(from) => Some(from.parse::<u32>().unwrap()),
                 None => None,
@@ -81,11 +81,13 @@ fn main() {
         )
         .get_matches();
 
-    if let Some(matches) = matches.subcommand_matches("top") {
-        let top = Top::new(matches);
+    let input_file = matches.value_of("input_file").unwrap();
+
+    if let Some(subcommand_matches) = matches.subcommand_matches("top") {
+        let top = Top::new(input_file, subcommand_matches);
         top.run();
-    } else if let Some(matches) = matches.subcommand_matches("distinct") {
-        let distinct = Distinct::new(matches);
+    } else if let Some(subcommand_matches) = matches.subcommand_matches("distinct") {
+        let distinct = Distinct::new(input_file, subcommand_matches);
         distinct.run();
     }
 }
