@@ -5,4 +5,5 @@ authors = ["Joris Valette <joris.valette@algolia.com>"]
 edition = "2018"
 
 [dependencies]
-clap = "2.33.0"
+clap = "2.33"
+itertools = "0.8"
