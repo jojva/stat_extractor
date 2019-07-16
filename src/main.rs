@@ -11,6 +11,8 @@ fn main() {
     // TODO: forbid running with no subcommand
     // TODO: make sure that numbers are numbers. Can clap check this?
     // TODO: use radix_trie crate?
+    // TODO: use errors instead of unwrap()
+    // TODO: refactor if I can
     let matches = App::new("stat_extractor")
         .version("0.1.0")
         .author("Joris V. <joris.valette@gmail.com>")
