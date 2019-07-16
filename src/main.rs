@@ -77,7 +77,7 @@ impl Distinct {
             let timestamp = str::from_utf8(&timestamp_buf)
                 .unwrap()
                 .parse::<u64>()
-                .unwrap();;
+                .unwrap();
             // read_until includes '\n' in query, but we don't want it
             query.truncate(query.len() - 1);
             if timestamp >= self.from && timestamp <= self.to {
