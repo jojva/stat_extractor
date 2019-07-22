@@ -1,5 +1,6 @@
 use clap::{App, Arg, ArgMatches, SubCommand};
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::str;
@@ -19,12 +20,13 @@ fn main() {
         .subcommand(
             SubCommand::with_name("distinct")
                 .arg(Arg::with_name("from").long("from").takes_value(true))
-                .arg(Arg::with_name("to").long("to").takes_value(true)),
+                .arg(Arg::with_name("to").long("to").takes_value(true))
         )
         .subcommand(
             SubCommand::with_name("top")
+                .arg(Arg::with_name("nb_top_queries").takes_value(true).required(true))
                 .arg(Arg::with_name("from").long("from").takes_value(true))
-                .arg(Arg::with_name("to").long("to").takes_value(true)),
+                .arg(Arg::with_name("to").long("to").takes_value(true))
         )
         .get_matches();
 
@@ -90,7 +92,7 @@ impl Distinct {
 
 struct Top {
     input_file: String,
-    nb_top_queries: u32,
+    nb_top_queries: usize,
     from: u64,
     to: u64,
 }
@@ -102,7 +104,7 @@ impl Top {
             nb_top_queries: matches
                 .value_of("nb_top_queries")
                 .unwrap()
-                .parse::<u32>()
+                .parse::<usize>()
                 .unwrap(),
             from: match matches.value_of("from") {
                 Some(from) => from.parse::<u64>().unwrap(),
@@ -116,6 +118,37 @@ impl Top {
     }
 
     fn run(&self) {
-        // TODO
+        let file = File::open(&self.input_file).unwrap();
+        let mut buf_reader = BufReader::new(file);
+        let mut timestamp_buf = [0; 10];
+        let mut tab = [0; 1];
+        let mut queries_map = HashMap::new();
+        loop {
+            let mut query = Box::new(vec![]);
+            let _ = buf_reader.read_exact(&mut timestamp_buf);
+            let _ = buf_reader.read_exact(&mut tab);
+            let nb_bytes_query = buf_reader.read_until(b'\n', &mut query).unwrap();
+            if nb_bytes_query == 0 {
+                break;
+            }
+            let timestamp = str::from_utf8(&timestamp_buf)
+                .unwrap()
+                .parse::<u64>()
+                .unwrap();
+            // read_until includes '\n' in query, but we don't want it
+            query.truncate(query.len() - 1);
+            if timestamp >= self.from && timestamp <= self.to {
+                let count = match queries_map.get(&query) {
+                    Some(&count) => count + 1,
+                    None => 1
+                };
+                queries_map.insert(query, count);
+            }
+        }
+
+        let queries_map_iter = queries_map.iter().sorted_by(|a, b| { b.1.cmp(a.1) });
+        for (key, value) in queries_map_iter.take(self.nb_top_queries) {
+            println!("{} {}", value, str::from_utf8(&key).unwrap());
+        }
     }
 }
