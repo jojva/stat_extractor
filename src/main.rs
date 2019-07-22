@@ -1,5 +1,3 @@
-extern crate clap;
-
 use clap::{App, Arg, ArgMatches, SubCommand};
 use itertools::Itertools;
 use std::fs::File;
