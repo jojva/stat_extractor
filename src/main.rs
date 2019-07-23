@@ -20,13 +20,17 @@ fn main() {
         .subcommand(
             SubCommand::with_name("distinct")
                 .arg(Arg::with_name("from").long("from").takes_value(true))
-                .arg(Arg::with_name("to").long("to").takes_value(true))
+                .arg(Arg::with_name("to").long("to").takes_value(true)),
         )
         .subcommand(
             SubCommand::with_name("top")
-                .arg(Arg::with_name("nb_top_queries").takes_value(true).required(true))
+                .arg(
+                    Arg::with_name("nb_top_queries")
+                        .takes_value(true)
+                        .required(true),
+                )
                 .arg(Arg::with_name("from").long("from").takes_value(true))
-                .arg(Arg::with_name("to").long("to").takes_value(true))
+                .arg(Arg::with_name("to").long("to").takes_value(true)),
         )
         .get_matches();
 
@@ -140,13 +144,13 @@ impl Top {
             if timestamp >= self.from && timestamp <= self.to {
                 let count = match queries_map.get(&query) {
                     Some(&count) => count + 1,
-                    None => 1
+                    None => 1,
                 };
                 queries_map.insert(query, count);
             }
         }
 
-        let queries_map_iter = queries_map.iter().sorted_by(|a, b| { b.1.cmp(a.1) });
+        let queries_map_iter = queries_map.iter().sorted_by(|a, b| b.1.cmp(a.1));
         for (key, value) in queries_map_iter.take(self.nb_top_queries) {
             println!("{} {}", value, str::from_utf8(&key).unwrap());
         }
