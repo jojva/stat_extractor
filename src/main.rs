@@ -1,4 +1,7 @@
-use clap::{App, Arg, ArgMatches, SubCommand};
+#[macro_use]
+extern crate clap;
+
+use clap::{App, AppSettings, Arg, ArgMatches, ErrorKind, SubCommand};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs::File;
@@ -7,15 +10,13 @@ use std::str;
 use std::u64;
 
 fn main() {
-    // TODO: forbid running with no subcommand
-    // TODO: make sure that numbers are numbers. Can clap check this?
-    // TODO: use radix_trie crate?
     // TODO: use errors instead of unwrap()
     // TODO: refactor if I can
     let matches = App::new("stat_extractor")
         .version("0.1.0")
         .author("Joris V. <joris.valette@gmail.com>")
         .about("HackerNews stat extractor")
+        .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(Arg::with_name("input_file").required(true))
         .subcommand(
             SubCommand::with_name("distinct")
@@ -55,14 +56,14 @@ impl Distinct {
     fn new(input_file: &str, matches: &ArgMatches) -> Distinct {
         Distinct {
             input_file: input_file.to_owned(),
-            from: match matches.value_of("from") {
-                Some(from) => from.parse::<u64>().unwrap(),
-                None => 0,
-            },
-            to: match matches.value_of("to") {
-                Some(to) => to.parse::<u64>().unwrap(),
-                None => u64::MAX,
-            },
+            from: value_t!(matches.value_of("from"), u64).unwrap_or_else(|e| match e.kind {
+                ErrorKind::ArgumentNotFound => 0,
+                _ => e.exit(),
+            }),
+            to: value_t!(matches.value_of("to"), u64).unwrap_or_else(|e| match e.kind {
+                ErrorKind::ArgumentNotFound => u64::MAX,
+                _ => e.exit(),
+            }),
         }
     }
 
@@ -105,19 +106,16 @@ impl Top {
     fn new(input_file: &str, matches: &ArgMatches) -> Top {
         Top {
             input_file: input_file.to_owned(),
-            nb_top_queries: matches
-                .value_of("nb_top_queries")
-                .unwrap()
-                .parse::<usize>()
-                .unwrap(),
-            from: match matches.value_of("from") {
-                Some(from) => from.parse::<u64>().unwrap(),
-                None => 0,
-            },
-            to: match matches.value_of("to") {
-                Some(to) => to.parse::<u64>().unwrap(),
-                None => u64::MAX,
-            },
+            nb_top_queries: value_t!(matches.value_of("nb_top_queries"), usize)
+                .unwrap_or_else(|e| e.exit()),
+            from: value_t!(matches.value_of("from"), u64).unwrap_or_else(|e| match e.kind {
+                ErrorKind::ArgumentNotFound => 0,
+                _ => e.exit(),
+            }),
+            to: value_t!(matches.value_of("to"), u64).unwrap_or_else(|e| match e.kind {
+                ErrorKind::ArgumentNotFound => u64::MAX,
+                _ => e.exit(),
+            }),
         }
     }
 
@@ -149,7 +147,6 @@ impl Top {
                 queries_map.insert(query, count);
             }
         }
-
         let queries_map_iter = queries_map.iter().sorted_by(|a, b| b.1.cmp(a.1));
         for (key, value) in queries_map_iter.take(self.nb_top_queries) {
             println!("{} {}", value, str::from_utf8(&key).unwrap());
